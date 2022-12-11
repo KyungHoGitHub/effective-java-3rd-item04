@@ -1,34 +1,49 @@
-# 아이템 4.인스턴스화를 막으려거든 private 생성자를 사용하라
+# 아이템 4.인스턴스화를 막으려거든 private 생성자를 사용하라.
 
-정적 팩터리 메소드와 생성자는 공통적인 제약이 있음.
-선택적 매개변수가 많을 경우 표현 방식의 유연성이 떨어지고 대응하기 어려움.
-
-점층적 생성자 패턴(Telescoping Constructor pattern), 자바빈즈 패턴(JavaBeans Pattern) 을 사용할 수 있으나 사용성에 아래 제약이 따름.
-
-### 점층적 생성자 패턴 (Telescoping Constructor Pattern)
+<정적인 클래스가 도움이 될때>
+1. java.lang.Math 나 java.utils.Arrays 처럼,
+   기본 타입 값이나 배열 관련 메서드들을 모아놓을때
+2. java.utils.Collections 처럼 특정 인터페이스의 구현체들에 대하여,
+   그것들을 생성해주는 정적 팩토리 메서드들을 모아놓을 때
+3. final 클래스와 관련한 메서드들을 모아놓을때
+### 클래스의 인스턴스화를 막으려면 private 생성자를 사용 (itme01)
 * 가독성이 떨어짐
-* 코드 작성 시 마다 의미 인식이 필요
+* 코드 작성 시 마다 의미 인식이 필요()
 * 프로그램 유지 보수의 문제
+-----
 
-### 자바빈즈 패턴 (JavaBeans Pattern)
-* 콜스택의 낭비 (하나의 객체 생성을 위해 여러 메소드를 호출해야 함)
-* 일관성(Consistency)이 무너짐
-* 클래스를 불변으로 만들 수 없음 (단, freezing 을 이용할 수 있음)
-* thread safety 할 수 있도록 별도의 조정이 필요
+#### java.lang.Math
+- 계산과 관련된 정적 메소드와 상수를 담고 있다.
+```java 
+/**
+* Don't let anyone instantiate this class.
+*/
+private Math() {}
+```
 
-객체의 불변성(Immutable)을 보장해야 하고, 직관적으로 이해할 수 있는 코드가 필요하면 아래가 대안이 될 수 있음.
+#### java.lang.Arrays
+- 배열과 관련된 정적 메서드를 담고 있다
+```java
+/*  
+ * This class contains various methods for manipulating arrays (such as
+ * sorting and searching). This class also contains a static factory
+ * that allows arrays to be viewed as lists.
+ */
 
-### 빌더 패턴 (Builder Pattern)
-* 직관적으로 이해할 수 있다.
-* 일관성(Consistency)을 보장한다.
-* 객체를 불변(Immutable)으로 만들 수 있다.
-* Method Chaining(Fluent API) 을 구현할 수 있다.
-* 단, 코드량이 많아지고 구현 및 이해 난이도가 올라가는 문제가 있다.
+// Suppresses default constructor, ensuring non-instantiability.
+private Arrays() {}
+```
 
-### 롬복 빌더 (Lombok's Builder)
-* Boilerplate 코드를 효과적으로 줄일 수 있다.
-* 필수 값을 제어하기 위한 조치가 필요하다. (아래 예제는 RunTime 중 Exception 으로만 확인 가능)
-* Lombok 의 제작자가 밝힌 것과 같이 Hack 코드로 언제 사용이 중지될지 모른다.
+#### java.lang.Collections
+* map 인터페이스 타입 객체를 넣으면, SynchronizedMap을 반환해주는 정적적메소드
+```java 
+//from Collections 클래스
+public static <K,V> Map<K,V> synchronizedMap(Map<K,V> m){
+    retrun new SynchronizedMap<>(m);
+}
+```
+#### 인스턴스를 막으려면 private생성자 사용
+* 기본 생성자를 private으로 명시해주는 이유: JAVA 는 다른 생성자가 없을 경우 컴파일러가 자동으로 기본 생성자를 만들어주기 때문입니다
 
 ```java 
 public class UtilityClass{
@@ -40,3 +55,31 @@ public class UtilityClass{
 }
 
 ```
+item04_exam01 코드
+```java
+public class exam01 {
+    class DateUtility{
+        private DateUtility(){
+            /**
+             * 클래스 내부에서도 호출이 안되도록 막는다.
+             * 생성되면 에러 발생
+             */
+            throw new AssertionError();
+        }
+    }
+
+    public static void main(String[] args){
+
+         /** 적적한주석으로 직관성을 높일 수 있다
+         *private 처리 후, instance화가 불가능 하다.
+         */
+        DateUtility dateUtility = new DateUtility()
+        
+    }
+}
+}
+```
+ -----
+### 추상 클래스로 만드는 것으로는 인스턴스화를 막을 수 없다.
+추상 클래스의 경우 상속하여 하위 클래스를 만들면 인스턴스화가 된다.
+사용자는 해당 추상 클래스를 상속하여 쓰라는 의도로 오해할 수 있는데 이러면 더 큰 문제가 된다.
